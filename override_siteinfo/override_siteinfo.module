@@ -1,0 +1,97 @@
+<?php 
+
+/**
+ * Implements form_alter() to alter site_informaton_setting form
+ */
+
+function override_siteinfo_form_system_site_information_settings_alter(&$form, &$form_state, $form_id) {
+
+      $form['siteapikey'] = array(
+          '#title' => t('Site API Key'),
+          '#type' => 'textfield',
+         // '#required' => true,
+          '#default_value' => !empty(variable_get('siteapikey')) ? variable_get('siteapikey') : 'No API Key yet',
+          '#group' => 'site_information',
+          '#weight' => -1,
+        );
+       $form['actions']['submit']['#value'] = t('Update Configuration');
+       $form['actions']['submit']['#submit'][]='submit_site_api_key';
+
+       
+}
+
+
+/**
+ * Alter After Submitting site_informaton_setting
+ */
+
+function submit_site_api_key($form, &$form_state){
+
+      $getSiteapiKeyVal = ($form_state['values']['siteapikey'] !="") ? $form_state['values']['siteapikey']:'No API Key yet';
+      variable_set('siteapikey', $getSiteapiKeyVal);
+      drupal_set_message("Site API Key has been saved with ".$getSiteapiKeyVal);
+}
+
+
+/**
+* Adding Menu to show response on hitting the URL  
+*/
+
+function override_siteinfo_menu()
+    {
+          $items['page_json/%/%'] = array(
+              'title' => 'Page Json',
+              'page callback' => 'override_siteinfo_page_json_call',
+              'page arguments' => array(1, 2),
+              'access callback' => TRUE,
+            );
+          return $items;
+       
+      }
+
+
+/**
+* Call back function to show response 
+*/
+
+function override_siteinfo_page_json_call($siteapkiKeyVal,$nodeIdVal)
+    {
+      //http://localhost/page_json/FOOBAR12345/17
+      // $siteapkiKeyVal :- As per assumption I am assuming "FOOBAR12345" as site API key
+      // $nodeIdVal :- As per assumption I am assuming "17" as nodeid
+
+        $getsiteAPI = variable_get('siteapikey');
+          if (is_numeric($nodeIdVal)) {
+            // Load the node if you need to
+              $node_exists = node_load($nodeIdVal);
+              if($node_exists && $node_exists->type == 'page'){
+                  if($siteapkiKeyVal == $getsiteAPI && $siteapkiKeyVal!= 'No API Key yet')
+                    {
+
+                      $response['result'] = $node_exists;
+
+                    }
+                    else
+                    {
+
+                      $response['result'] = 'access denied';
+
+                    }
+
+              }
+              else
+              {
+                $response['result'] = 'Node ID Not exists or Invalid content type';
+              }
+          }
+          else
+          {
+              $response['result'] = 'In valid Node Id';
+
+          }
+
+        drupal_json_output($response);
+    }
+
+
+?>

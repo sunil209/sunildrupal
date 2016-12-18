@@ -1,0 +1,3 @@
+name = Alter "Site Information" 
+description = This module needs to alter the existing Drupal "Site Information" form
+core = 7.x
